@@ -1,11 +1,17 @@
+import os
+import sys
 import json
 import logging
 import asyncio
+import threading
+import concurrent.futures
 
 import azure.functions as func
 import azure.durable_functions as df
 
 from src.run_ingestion import main
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -14,7 +20,13 @@ app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 async def adxingestor(req: func.HttpRequest, client) -> func.HttpResponse:
     logging.info("[INFO] --> Python HTTP trigger function processed a request.")
 
-    instance_id = await client.start_new("start_orchestrator", client_input=None)
+    try:
+        req_body = req.get_json()
+        input_data = req_body if req_body else {}
+    except ValueError:
+        input_data = {}
+
+    instance_id = await client.start_new("start_orchestrator", client_input=input_data)
 
     logging.info(f"[INFO] --> Started orchestration with ID = '{instance_id}'.")
     
@@ -23,16 +35,56 @@ async def adxingestor(req: func.HttpRequest, client) -> func.HttpResponse:
 @app.orchestration_trigger(context_name="context")
 def start_orchestrator(context: df.DurableOrchestrationContext):
     logging.info("[INFO] --> Started orchestration")
+    
+    input_data = context.get_input()
 
-    result = yield context.call_activity("start_ingestion", None)
+    result = yield context.call_activity("start_ingestion", input_data)
+
+    logging.info(f"[INFO] --> Orchestration completed with result: {result}")
 
     return result
 
 @app.activity_trigger(input_name="payload")
-def start_ingestion(payload: str) -> str:
+def start_ingestion(payload) -> dict:
     logging.info("[INFO] --> Started ingestion activity")
+    
+    try:
+        try:
+            loop = asyncio.get_running_loop()
 
-    asyncio.run(main())
+            logging.info("[INFO] --> Running in existing event loop")
+            
+            def run_main_in_thread():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(main())
+                finally:
+                    new_loop.close()
+            
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_main_in_thread)
+                result = future.result(timeout=300) 
+                
+        except RuntimeError:
+            logging.info("[INFO] --> No existing event loop, using asyncio.run()")
+            result = asyncio.run(main())
+        
+        logging.info("[INFO] --> Ingestion completed successfully")
+        return {
+            "status": "success",
+            "message": "Ingestion completed successfully",
+            "result": result if result else "Completed"
+        }
+        
+    except Exception as e:
+        error_msg = f"Ingestion failed: {str(e)}"
+        logging.error(f"[ERROR] --> {error_msg}")
+        return {
+            "status": "error", 
+            "message": error_msg,
+            "result": None
+        }
 
 @app.route(route="status/{instanceId}")
 @app.durable_client_input(client_name="client")
