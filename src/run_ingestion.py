@@ -91,20 +91,23 @@ async def main():
 
     if table_configs:
         print(f"[INFO] --> Found {len(table_configs)} active tables for migration")
+        try:
+            ingestion_handler = Ingestor(
+                bootstrap=bootstrap,
+                max_concurrent_tasks=5,
+                max_thread_workers=8,
+                chunk_size=25000
+            )
 
-        ingestion_handler = Ingestor(
-            bootstrap=bootstrap,
-            max_concurrent_tasks=5,
-            max_thread_workers=8,
-            chunk_size=25000
-        )
-
-        summary = await ingestion_handler.process_all_tables(table_configs)
-        pprint.pprint(summary)
+            summary = await ingestion_handler.process_all_tables(table_configs)
+            pprint.pprint(summary)
+        except Exception as e:
+            return f"[ERROR] --> Exception during processing: {e}"
+        finally:
+            ingestion_handler.thread_pool.shutdown(wait=True)
+        return "[INFO] --> Ingestion Completed"
     else:
-        print("[INFO] --> No active tables found for migration")
-
-    ingestion_handler.thread_pool.shutdown(wait=True)
+        return "[INFO] --> No active tables found for migration"
 
 if __name__ == "__main__":
     asyncio.run(main())
