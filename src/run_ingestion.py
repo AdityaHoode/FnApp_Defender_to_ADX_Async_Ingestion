@@ -23,6 +23,9 @@ bootstrap = {
     "audit_table": "meta_MigrationAudit",
     "chunk_audit_table": "meta_ChunkIngestionFailures",
     "chunk_audit_view": "vw_meta_LatestChunkIngestionFailures",
+    "max_concurrent_tasks": 5,
+    "max_thread_workers": 8,
+    "chunk_size": 25000,
     "clientId": os.getenv("AZURE_CLIENT_ID"),
     "clientSecret": os.getenv("AZURE_CLIENT_SECRET"),
     "tenantId": os.getenv("AZURE_TENANT_ID"),
@@ -60,8 +63,8 @@ async def main():
     
     reprocess_handler = Reprocessor(
         bootstrap=bootstrap,
-        max_concurrent_tasks=5,
-        chunk_size=25000
+        max_concurrent_tasks=bootstrap["max_concurrent_tasks"],
+        chunk_size=bootstrap["chunk_size"]
     )
 
     try:
@@ -94,9 +97,9 @@ async def main():
         try:
             ingestion_handler = Ingestor(
                 bootstrap=bootstrap,
-                max_concurrent_tasks=5,
-                max_thread_workers=8,
-                chunk_size=25000
+                max_concurrent_tasks=bootstrap["max_concurrent_tasks"],
+                max_thread_workers=bootstrap["max_thread_workers"],
+                chunk_size=bootstrap["chunk_size"]
             )
 
             p_summary = await ingestion_handler.process_all_tables(table_configs)
