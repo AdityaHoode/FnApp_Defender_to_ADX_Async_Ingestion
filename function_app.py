@@ -18,7 +18,7 @@ app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.route(route="adxingestor/start_orchestrator")
 @app.durable_client_input(client_name="client")
 async def adxingestor(req: func.HttpRequest, client) -> func.HttpResponse:
-    logging.info("[INFO] --> Python HTTP trigger function processed a request.")
+    logging.info("[INFO] --> HTTP trigger function processed a request.")
 
     try:
         req_body = req.get_json()
@@ -70,10 +70,7 @@ def start_ingestion(payload) -> dict:
             logging.info("[INFO] --> No existing event loop, using asyncio.run()")
             result = asyncio.run(main())
         
-        logging.info("[INFO] --> Ingestion completed successfully")
         return {
-            "status": "success",
-            "message": "Ingestion completed successfully",
             "result": result if result else "Completed"
         }
         

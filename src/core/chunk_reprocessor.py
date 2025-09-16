@@ -15,10 +15,7 @@ class Reprocessor(Ingestor):
         
         super().__init__(bootstrap, max_concurrent_tasks, chunk_size, max_thread_workers)
         
-    def get_failed_chunks(self) -> List[Dict[str, Any]]:
-
-        print("[FUNCTION] --> get_failed_chunks")
-        
+    def get_failed_chunks(self) -> List[Dict[str, Any]]:        
         base_query = f"""
             {self.bootstrap["chunk_audit_view"]}
             | where reprocess_success==false and isnotnull(low_watermark) and isnotnull(high_watermark)
@@ -96,9 +93,6 @@ class Reprocessor(Ingestor):
         reprocess_results: List[Dict[str, Any]],
         failed_chunks: List[Dict[str, Any]]
     ) -> None:
-        
-        print("[FUNCTION] --> meta_insert_successful_reprocess")
-
         table_lookup = {item["table"]: item for item in failed_chunks}
 
         for result in reprocess_results:
@@ -147,11 +141,7 @@ class Reprocessor(Ingestor):
         failed_chunk: Dict[str, Any],
         source_table: str,
         watermark_column: str,
-    ) -> Dict[str, Any]:
-
-        print("-"*60)
-        print(f"[FUNCTION] --> reprocess_single_chunk")
-        
+    ) -> Dict[str, Any]:      
         table_folder = failed_chunk["folder"]
         table_name = failed_chunk["table"]
         chunk_id = failed_chunk["chunk_id"]
@@ -288,8 +278,6 @@ class Reprocessor(Ingestor):
                 
                 tasks = [process_chunk_with_semaphore(chunk) for chunk in failed_chunks]
                 reprocess_results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            print(f"[INFO] --> reprocess_results: {reprocess_results}")
             
             successful_chunks = sum(1 for r in reprocess_results if isinstance(r, dict) and r.get("success"))
             failed_chunks_count = len(failed_chunks) - successful_chunks
@@ -300,8 +288,6 @@ class Reprocessor(Ingestor):
             )
             
             valid_results = [r for r in reprocess_results if isinstance(r, dict)]
-
-            print(f"[INFO] --> valid_results: {valid_results}")
 
             if valid_results:
                 self.meta_insert_successful_reprocess(valid_results, failed_chunks)

@@ -65,10 +65,11 @@ async def main():
     )
 
     try:
-        summary = await reprocess_handler.reprocess_failed_chunks()
-        pprint.pprint(summary)
+        rp_summary = await reprocess_handler.reprocess_failed_chunks()
+        pprint.pprint(rp_summary)
     except Exception as e:
         print(f"[ERROR] --> Exception during reprocessing: {e}")
+        rp_summary = {"status": "error", "message": str(e)}
     finally:
         reprocess_handler.thread_pool.shutdown(wait=True)
 
@@ -88,7 +89,6 @@ async def main():
 
     table = response_config.primary_results[0]
     table_configs = [row.to_dict() for row in table if (row["IsActive"] and not (row["LoadType"] == "Full" and row["HighWatermark"]))]
-
     if table_configs:
         print(f"[INFO] --> Found {len(table_configs)} active tables for migration")
         try:
@@ -99,15 +99,12 @@ async def main():
                 chunk_size=25000
             )
 
-            summary = await ingestion_handler.process_all_tables(table_configs)
-            pprint.pprint(summary)
+            p_summary = await ingestion_handler.process_all_tables(table_configs)
+            pprint.pprint(p_summary)
+            return {"reprocessing_summary": rp_summary, "processing_summary": p_summary}
         except Exception as e:
             return f"[ERROR] --> Exception during processing: {e}"
         finally:
             ingestion_handler.thread_pool.shutdown(wait=True)
-        return "[INFO] --> Ingestion Completed"
     else:
         return "[INFO] --> No active tables found for migration"
-
-if __name__ == "__main__":
-    asyncio.run(main())

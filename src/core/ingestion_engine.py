@@ -100,7 +100,6 @@ class Ingestor:
                 raise Exception(f"Defender token acquisition failed: {str(e)}")
 
     async def get_adx_token(self, session: aiohttp.ClientSession) -> str:
-        """Get ADX API token with improved caching and error isolation"""
         async with self.token_lock:
             if (self.adx_token_cache['token'] and 
                 self.adx_token_cache['expires'] and
@@ -192,7 +191,7 @@ class Ingestor:
                 return 0, 0
             
             num_chunks = math.ceil(total_records / self.chunk_size)
-            # print(f"[INFO] --> Total records: {total_records:,}, Chunk size: {self.chunk_size:,}, Number of chunks: {num_chunks}")
+
             return total_records, num_chunks
         except Exception as e:
             print(f"[ERROR] --> Error calculating chunks: {e}")
@@ -418,8 +417,7 @@ class Ingestor:
 
         return summary
 
-    def _sync_ingest_data(self, records: List[Dict], chunk_index: int, destination_folder: str, destination_tbl: str, low_watermark: str, high_watermark: str) -> None:
-        """Synchronous data ingestion - runs in thread pool"""
+    def _sync_ingest_data(self, records: List[Dict], chunk_index: int, destination_folder: str, destination_tbl: str, low_watermark: str, high_watermark: str) -> Dict[str, Any]:
         max_retries = 5
         retry_attempts = 0
         backoff_factor = 2
@@ -490,9 +488,7 @@ class Ingestor:
                     print(f"[ERROR] --> Ingestion failed for {destination_tbl}: {str(e)}")
                     return result
 
-    async def ingest_to_adx(self, records: List[Dict], chunk_index: int, destination_folder: str, destination_tbl: str, watermark_column: str) -> None:
-        print("[FUNCTION] --> ingest_to_adx")
-
+    async def ingest_to_adx(self, records: List[Dict], chunk_index: int, destination_folder: str, destination_tbl: str, watermark_column: str) -> Dict[str, Any]:
         try:
             low_watermark = min(item[watermark_column] for item in records)
             high_watermark = max(item[watermark_column] for item in records)
@@ -508,17 +504,10 @@ class Ingestor:
                 low_watermark,
                 high_watermark
             )
-
-            # if not chunk_result["success"]:
-            #     print(f"[ERROR] --> Ingestion failed for {destination_tbl} chunk {chunk_index}: {chunk_result['error']}")
-            # else:
-            #     print(f"[INFO] --> Successfully ingested to {destination_tbl}")
             
             return chunk_result
             
-        except Exception as e:
-            # print(f"[ERROR] --> Ingestion failed for {destination_tbl}: {str(e)}")
-            
+        except Exception as e:            
             return {
                 "chunk_id": chunk_index,
                 "folder": destination_folder,
@@ -540,9 +529,6 @@ class Ingestor:
         total_chunks: int,
         disable_chunking: bool = False
     ) -> Dict[str, Any]:
-        """Process a single chunk of data with better error isolation"""
-        print("-"*80)
-        print("[FUNCTION] --> process_single_chunk")
         source_tbl = table_config["SourceTable"]
         destination_folder = table_config["DestinationFolder"]
         destination_tbl = table_config["DestinationTable"]
@@ -550,8 +536,6 @@ class Ingestor:
 
         max_retries = 5
         retry_attempts = 0
-        # backoff_factor = 2
-        # max_backoff = 60
         
         try:
             if disable_chunking:
@@ -679,7 +663,7 @@ class Ingestor:
 
     
     async def process_single_table(self, session: aiohttp.ClientSession, table_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a single table with chunking support and better error isolation"""
+        print("-"*100)
         async with self.semaphore:
             source_tbl = table_config["SourceTable"]
             destination_folder = table_config["DestinationFolder"]
@@ -689,8 +673,6 @@ class Ingestor:
             high_watermark = table_config["HighWatermark"]
             
             try:
-                print("-"*80)
-                print("[FUNCTION] --> process_single_table")
                 print(f"[INFO] --> Starting processing for table: {source_tbl}")
                 
                 # Build base query
@@ -784,11 +766,7 @@ class Ingestor:
                     "error": str(e)
                 }
                 
-    async def process_all_tables(self, table_configs: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Process all tables concurrently"""
-        
-        print("-"*80)
-        print("[FUNCTION] --> process_all_tables")
+    async def process_all_tables(self, table_configs: List[Dict[str, Any]]) -> Dict[str, Any]:        
         print(f"[INFO] --> Chunk size: {self.chunk_size:,} records")
         print(f"[INFO] --> Max concurrent tasks: {self.max_concurrent_tasks}")
         print(f"[INFO] --> Max thread workers: {self.max_thread_workers}")
