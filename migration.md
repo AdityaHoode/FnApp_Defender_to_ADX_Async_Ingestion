@@ -170,9 +170,13 @@ A dictionary containing ADX cluster and ingestion URIs, database and table names
    <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_2.png?raw=true" />
 5. Check Status or Terminate the Orchestration
    - To get the status of the orchestration run, send a GET request to the get_status URL. Replace {instanceId} with the actual orchestration ID.
+
    <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_3.png?raw=true" />
+
    <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_4.png?raw=true" />
+
    - To terminate the orchestration run, send a POST request to the terminate_orchestration URL, using the same {instanceId} replacement.
+   
    <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_5.png?raw=true" />
 6. With the Terminal panel focused, press Ctrl + C to stop Core Tools and disconnect the debugger.
 
