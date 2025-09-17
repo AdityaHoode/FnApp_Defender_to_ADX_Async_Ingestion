@@ -142,7 +142,7 @@ A dictionary containing ADX cluster and ingestion URIs, database and table names
 
 ---
 
-## 🏃‍♂️ Step 5
+## 👟 Step 5
 ### Run the script locally as a Function App
 
 ### 1️⃣ Install Dependencies
@@ -165,16 +165,21 @@ A dictionary containing ADX cluster and ingestion URIs, database and table names
 1. Press `F5` or click the **Run and Debug** icon in the Activity bar on the left.  
 2. The Terminal panel will display the output from Azure Functions Core Tools.  
 3. Your function app starts locally, and you can see the URL endpoint of your HTTP-triggered function running.
+<img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_1.png?raw=true" />
 4. Start the Orchestration
    - Send a GET request to the **adxingestor** URL to start the orchestration.
+   <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_2.png?raw=true" />
 5. Check Status or Terminate the Orchestration
    - To get the status of the orchestration run, send a GET request to the get_status URL. Replace {instanceId} with the actual orchestration ID.
+   <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_3.png?raw=true" />
+   <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_4.png?raw=true" />
    - To terminate the orchestration run, send a POST request to the terminate_orchestration URL, using the same {instanceId} replacement.
+   <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_5.png?raw=true" />
 6. With the Terminal panel focused, press Ctrl + C to stop Core Tools and disconnect the debugger.
 
 ---
 
-# End-to-End Workflow
+## 🟦 End-to-End Workflow
 
 1. **Start Ingestion Script**
 2. **Load Bootstrap Configuration**
