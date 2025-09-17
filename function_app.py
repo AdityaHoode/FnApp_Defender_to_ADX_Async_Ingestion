@@ -63,9 +63,8 @@ def start_ingestion(payload) -> dict:
                     new_loop.close()
             
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(run_main_in_thread)
-                result = future.result(timeout=300) 
-                
+                executor.submit(run_main_in_thread)
+
         except RuntimeError:
             logging.info("[INFO] --> No existing event loop, using asyncio.run()")
             result = asyncio.run(main())

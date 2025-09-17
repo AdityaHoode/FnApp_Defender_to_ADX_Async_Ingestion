@@ -109,6 +109,16 @@ AZURE_TENANT_ID=<your-tenant-id>
 ### 3️⃣ Setup Metadata Tables and Functions in ADX
 Execute the script in kql/metadata_stores.kql on your desired ADX database
 
+- meta_MigrationConfiguration
+<img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/meta_MigrationConfiguration.png?raw=true" />
+
+- meta_MigrationAudit
+<img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/meta_MigrationAudit.png?raw=true" />
+
+- vw_meta_LatestMigrationConfiguration
+<img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/vw_meta_LatestMigrationConfiguration.png?raw=true" />
+
+
 ---
 
 ### 4️⃣ Define Bootstrap Configuration
@@ -155,6 +165,39 @@ A dictionary containing ADX cluster and ingestion URIs, database and table names
 1. Press `F5` or click the **Run and Debug** icon in the Activity bar on the left.  
 2. The Terminal panel will display the output from Azure Functions Core Tools.  
 3. Your function app starts locally, and you can see the URL endpoint of your HTTP-triggered function running.
+4. Start the Orchestration
+   - Send a GET request to the **adxingestor** URL to start the orchestration.
+5. Check Status or Terminate the Orchestration
+   - To get the status of the orchestration run, send a GET request to the get_status URL. Replace {instanceId} with the actual orchestration ID.
+   - To terminate the orchestration run, send a POST request to the terminate_orchestration URL, using the same {instanceId} replacement.
+6. With the Terminal panel focused, press Ctrl + C to stop Core Tools and disconnect the debugger.
 
 ---
 
+# End-to-End Workflow
+
+1. **Start Ingestion Script**
+2. **Load Bootstrap Configuration**
+3. **Create ADX Ingest & Data Clients**
+4. **Check & Create Tables if Missing**
+5. **Start Async Session for API Calls**
+6. **For Each Table → Process Table**
+   - Check if High Watermark Exists
+     - ✅ **No** → Create Table & Mapping
+6. **Build Base KQL Query**
+7. **Calculate Chunks**
+8. Check if Records are Found
+   - ✅ **No** → Mark Table as Processed (0 records)
+   - ✅ **Yes** → Check if Chunking is Required
+     - ✅ **No** → Process Entire Table in Single Chunk
+     - ✅ **Yes** → Build Chunked Queries → Process Chunks in Parallel
+9. **Ingest Data to ADX with Retry Logic for Failures & Timeouts**
+11. **Collect Chunk Results**
+12. **Update Config, Audit & Chunk Failure Tables**
+13. **Analyze All Results**
+14. **Display Summary & Errors**
+15. **End of Script**
+ 
+## 🪜 FlowChart
+
+[![](https://mermaid.ink/img/pako:eNp1VNty2jAQ_ZUddSZPkEIwDXg66YCBhAAJtyRtDQ-KLYMmwqKSPIlDeO0H9BP7JZVlG5zOxA8G7Z49e3a16x3yuE-QjQLGn701FgrmnUUI-mm5M5Wc--GKSEV5CDNP0K1aQrl8AW13yLEPbc6VVAJvweFhQFeRwAl0mVK0DdRxHUGwItDqfM_Y4AQ6WGFwGCWhkhncMfCO66yJ96QhWdgcPzIigQYwolLScJXBOwbezWS2ZBx6MCMaoaUGXEBr3AcHM5bTdw2-5_a0r4u9dUoMf3__gbHgno5MLRk8ffdM0OUu1aQ1XNHVGh60LrHB4gm6L1QquU_Blwn47Ya_wZVbFK9rGeHt9ig9Bf4g8g36bjuiTHcSSwKDyRAmERFxhrsy2ftFQX1junZ1ZV7EkhTOOgqf8iKvjXtw1DslHhe-BCwI9HgU-vsi2-CgeOiOknpSvVjmLSH-10fx-aICIuVZFuNMAaNjLqNEVwlU6ry_IirI-3SjQ7obN-95N1QalyY2uaieNE3CssqWxVCT8TZrmXET33SMklzarenA-MCftgc06xgLPQ6EvbvgGwOfuNlgmrFU3MzqM1Vro2hKlIhhyFfUM5PVw5RFQs_kCczphvDoMMLjlK2YYGJMU9fhOrenUj26PTJih7BhiimGTY1p5t5tfXPJZr1K0Ip8qtfHyEqZMjHZmmSEMxM93434wZNUlfXk27tLmR872ytakmu6c1shZvGrXl7G_hOdvu9Mpnu3Q-WW4Rhm0UYvRqxb0xWCixx8b2APbjf0gQf5p6RIJFWsr7wFAWXM_kSqQT0gRc9D7mkEddIoei4zTxAENVIpegYfekYfeuYfeia5xyMW8VAJrQT1ka1EREpok3wQkiPaJTELpNZkQxbI1n99vVkLtAj3OmaLw5-cb_IwwaPVGtkBZlKfInPZHYpXAm8OVkFCnwhHL69C9tlZ3ZAge4dekF2unFaSp2lVG5Vmw7JqNetc_5RQjOzaqWU1z2sNq2o1z5qVav0LKZ_vS-jVCAgjxvb_AIZl20Q?type=png)](https://mermaid.live/edit#pako:eNp1VNty2jAQ_ZUddSZPkEIwDXg66YCBhAAJtyRtDQ-KLYMmwqKSPIlDeO0H9BP7JZVlG5zOxA8G7Z49e3a16x3yuE-QjQLGn701FgrmnUUI-mm5M5Wc--GKSEV5CDNP0K1aQrl8AW13yLEPbc6VVAJvweFhQFeRwAl0mVK0DdRxHUGwItDqfM_Y4AQ6WGFwGCWhkhncMfCO66yJ96QhWdgcPzIigQYwolLScJXBOwbezWS2ZBx6MCMaoaUGXEBr3AcHM5bTdw2-5_a0r4u9dUoMf3__gbHgno5MLRk8ffdM0OUu1aQ1XNHVGh60LrHB4gm6L1QquU_Blwn47Ya_wZVbFK9rGeHt9ig9Bf4g8g36bjuiTHcSSwKDyRAmERFxhrsy2ftFQX1junZ1ZV7EkhTOOgqf8iKvjXtw1DslHhe-BCwI9HgU-vsi2-CgeOiOknpSvVjmLSH-10fx-aICIuVZFuNMAaNjLqNEVwlU6ry_IirI-3SjQ7obN-95N1QalyY2uaieNE3CssqWxVCT8TZrmXET33SMklzarenA-MCftgc06xgLPQ6EvbvgGwOfuNlgmrFU3MzqM1Vro2hKlIhhyFfUM5PVw5RFQs_kCczphvDoMMLjlK2YYGJMU9fhOrenUj26PTJih7BhiimGTY1p5t5tfXPJZr1K0Ip8qtfHyEqZMjHZmmSEMxM93434wZNUlfXk27tLmR872ytakmu6c1shZvGrXl7G_hOdvu9Mpnu3Q-WW4Rhm0UYvRqxb0xWCixx8b2APbjf0gQf5p6RIJFWsr7wFAWXM_kSqQT0gRc9D7mkEddIoei4zTxAENVIpegYfekYfeuYfeia5xyMW8VAJrQT1ka1EREpok3wQkiPaJTELpNZkQxbI1n99vVkLtAj3OmaLw5-cb_IwwaPVGtkBZlKfInPZHYpXAm8OVkFCnwhHL69C9tlZ3ZAge4dekF2unFaSp2lVG5Vmw7JqNetc_5RQjOzaqWU1z2sNq2o1z5qVav0LKZ_vS-jVCAgjxvb_AIZl20Q)
