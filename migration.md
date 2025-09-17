@@ -7,7 +7,7 @@ The script is designed to facilitate data migration and error recovery. The scri
 1. **Reprocessing of failed ingestion chunks**
 2. **Main ingestion of data based on configuration stored in ADX**
 
-The script is built using Python with Azure SDKs and asynchronous/parallel programming to efficiently handle large datasets. The script is run on Azure Functions.
+The script is built using Python with Azure SDKs and asynchronous/parallel programming to efficiently handle large datasets. The script is run as an Azure Function App.
 
 ---
 
@@ -118,7 +118,6 @@ Execute the script in kql/metadata_stores.kql on your desired ADX database
 - vw_meta_LatestMigrationConfiguration
 <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/vw_meta_LatestMigrationConfiguration.png?raw=true" />
 
-
 ---
 
 ### 4️⃣ Define Bootstrap Configuration
@@ -165,7 +164,7 @@ A dictionary containing ADX cluster and ingestion URIs, database and table names
 1. Press `F5` or click the **Run and Debug** icon in the Activity bar on the left.  
 2. The Terminal panel will display the output from Azure Functions Core Tools.  
 3. Your function app starts locally, and you can see the URL endpoint of your HTTP-triggered function running.
-<img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_1.png?raw=true" />
+   <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_1.png?raw=true" />
 4. Start the Orchestration
    - Send a GET request to the **adxingestor** URL to start the orchestration.
    <img width="940" height="346" alt="image" src="https://github.com/AdityaHoode/FnApp_Defender_to_ADX_Async_Ingestion/blob/main/assets/run_fnapp_locally_2.png?raw=true" />
